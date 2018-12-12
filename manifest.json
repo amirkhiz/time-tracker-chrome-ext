@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "TimeTracker",
+  "description": "Time tracker extension to get ild time.",
+  "version": "0.1.0",
+  "author": "Siavash Habil <amirkhiz@gmail.com>",
+  "browser_action": {
+    "default_icon": "tab-icon.png",
+    "default_title": "Have a good day",
+    "default_popup": "popup.html"
+  },
+  "chrome_url_overrides": {},
+  "permissions": []
+}

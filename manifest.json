@@ -10,5 +10,13 @@
     "default_popup": "popup.html"
   },
   "chrome_url_overrides": {},
-  "permissions": []
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "persistent": false
+  }
 }

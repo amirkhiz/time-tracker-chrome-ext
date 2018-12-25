@@ -1,8 +1,9 @@
 chrome.storage.onChanged.addListener(handleDoneListChanges);
 
 (function () {
-    let taskList = document.getElementById('done-tasks-list');
-    let doneTask = document.getElementById('done-task');
+    let doneListsElm = document.getElementById('done-tasks-list');
+    let taskTitleInput = document.getElementById('done-task');
+    let addTaskBtn = document.getElementById('add-done-task');
     let timerValue = 0;
     let startTimestamp = 0;
 
@@ -23,7 +24,7 @@ chrome.storage.onChanged.addListener(handleDoneListChanges);
     getDoneListFromStorage(storage => {
         storage.doneList.forEach(doneItem => {
             const timerTags = createTimerTags((doneItem.endAt - doneItem.startAt) / 1000);
-            appendToDoneList(taskList, generateDoneItem(doneItem.title, timerTags.template));
+            appendToDoneList(doneListsElm, generateDoneItem(doneItem.title, timerTags.template));
         });
     });
 
@@ -32,26 +33,39 @@ chrome.storage.onChanged.addListener(handleDoneListChanges);
         setTimerElement(timerValue++);
     }, 1000);
 
-    // Handle create done task button
-    document.getElementById('add-done-task').addEventListener('click', function () {
-        const timerTags = createTimerTags(timerValue);
-
-        // Append new generated item to list
-        appendToDoneList(taskList, generateDoneItem(doneTask.value, timerTags.template));
-
-        // Push into Storage sync DoneList
-        setDoneListToStorage({title: doneTask.value, startAt: startTimestamp, endAt: new Date().getTime()});
+    // Handle create done task button click
+    addTaskBtn.addEventListener('click', function () {
+        handleNewItemEvent(doneListsElm, taskTitleInput, startTimestamp, timerValue);
 
         // Refresh timer to start from zero
         timerValue = 0;
+    });
 
-        // Empty input value
-        doneTask.value = '';
+    // Handle create done task input keyUp
+    taskTitleInput.addEventListener('keyup', function (event) {
+        if (dispatchForCode(event) !== 'Enter') {
+            return;
+        }
 
-        // Change storage value to current timestamp
-        setStartTimestampToStorage();
+        addTaskBtn.click();
     });
 })();
+
+function handleNewItemEvent(doneListsElm, taskTitleInput, startTimestamp, timerValue) {
+    const timerTags = createTimerTags(timerValue);
+
+    // Append new generated item to list
+    appendToDoneList(doneListsElm, generateDoneItem(taskTitleInput.value, timerTags.template));
+
+    // Push into Storage sync DoneList
+    setDoneListToStorage({title: taskTitleInput.value, startAt: startTimestamp, endAt: new Date().getTime()});
+
+    // Empty input value
+    taskTitleInput.value = '';
+
+    // Change storage value to current timestamp
+    setStartTimestampToStorage();
+}
 
 /**
  * Generate Done Item
@@ -218,3 +232,22 @@ function Timer(func, time) {
  * @property {number} startAt -Start timestamp
  * @property {number} endAt -End timestamp
  */
+
+/**
+ * Handle cross browser key code from keyboardEvent
+ *
+ * @param event
+ */
+function dispatchForCode(event) {
+    let code;
+
+    if (event.key !== undefined) {
+        code = event.key;
+    } else if (event.keyIdentifier !== undefined) {
+        code = event.keyIdentifier;
+    } else if (event.keyCode !== undefined) {
+        code = event.keyCode;
+    }
+
+    return code;
+}

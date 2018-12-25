@@ -20,6 +20,13 @@ chrome.storage.onChanged.addListener(handleDoneListChanges);
     // Calculate immediately after start
     setTimerElement(timerValue);
 
+    getDoneListFromStorage(storage => {
+        storage.doneList.forEach(doneItem => {
+            const timerTags = createTimerTags((doneItem.endAt - doneItem.startAt) / 1000);
+            appendToDoneList(taskList, generateDoneItem(doneItem.title, timerTags.template));
+        });
+    });
+
     // Create timer object
     new Timer(function () {
         setTimerElement(timerValue++);
@@ -27,17 +34,13 @@ chrome.storage.onChanged.addListener(handleDoneListChanges);
 
     // Handle create done task button
     document.getElementById('add-done-task').addEventListener('click', function () {
-        // Create li tag and append it to list with inserted title
-        let listItem = document.createElement('li');
         const timerTags = createTimerTags(timerValue);
 
-        listItem.innerText = `${doneTask.value} -- ${timerTags.template}`;
-        taskList.appendChild(listItem);
-
-        const now = new Date().getTime();
+        // Append new generated item to list
+        appendToDoneList(taskList, generateDoneItem(doneTask.value, timerTags.template));
 
         // Push into Storage sync DoneList
-        setDoneListToStorage({title: doneTask.value, startAt: startTimestamp, endAt: now});
+        setDoneListToStorage({title: doneTask.value, startAt: startTimestamp, endAt: new Date().getTime()});
 
         // Refresh timer to start from zero
         timerValue = 0;
@@ -51,8 +54,31 @@ chrome.storage.onChanged.addListener(handleDoneListChanges);
 })();
 
 /**
+ * Generate Done Item
+ * @param {string} title
+ * @param {string} timestamp
+ * @return {string}
+ */
+function generateDoneItem(title, timestamp) {
+    return `${title} -- ${timestamp}`;
+}
+
+/**
+ * Append new Done Item to list
+ * @param {HTMLElement} elm
+ * @param {string} value
+ */
+function appendToDoneList(elm, value) {
+    // Create li tag and append it to list with inserted title
+    let listItem = document.createElement('li');
+
+    listItem.innerText = value;
+    elm.appendChild(listItem);
+}
+
+/**
  * Get Start timestamp from sync storage
- * @param callback
+ * @param {function} callback
  */
 function getStartTimestampFromStorage(callback) {
     // Get timer start timestamp from sync storage
@@ -77,6 +103,10 @@ function setDoneListToStorage(item) {
     });
 }
 
+/**
+ * Get Done list from storage
+ * @param callback
+ */
 function getDoneListFromStorage(callback) {
     chrome.storage.sync.get('doneList', callback);
 }
